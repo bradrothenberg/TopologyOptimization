@@ -1,0 +1,19 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2013
+Project("{742181BD-BF08-A30F-B702-D4AB44ED17AB}") = "TopOp", "TopOp.vcxproj", "{C236093E-1CD6-099C-55DD-BED07C0A098A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C236093E-1CD6-099C-55DD-BED07C0A098A}.Debug|x64.ActiveCfg = Debug|x64
+		{C236093E-1CD6-099C-55DD-BED07C0A098A}.Debug|x64.Build.0 = Debug|x64
+		{C236093E-1CD6-099C-55DD-BED07C0A098A}.Release|x64.ActiveCfg = Release|x64
+		{C236093E-1CD6-099C-55DD-BED07C0A098A}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
