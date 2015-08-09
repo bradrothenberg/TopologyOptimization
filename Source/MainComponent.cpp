@@ -20,7 +20,7 @@ volfrac{.5},
 rmin{3.0},
 penal{3.0}
 {
-    setSize (900, 700);
+    setSize (1000, 500);
 	mLookAndFeel = std::make_shared<NTLookAndFeel>();
 	setLookAndFeel(mLookAndFeel.get());
 	addAndMakeVisible(mRunButton = new TextButton("Run Top Op"));
@@ -71,6 +71,7 @@ penal{3.0}
 	mRMinSlider->setBounds(10, mVolFracSlider->getBottom() + 1, 250, 24);
 	mPenalSlider->setBounds(10, mRMinSlider->getBottom() + 1, 250, 24);
 
+	mRunButton->setClickingTogglesState(true);
 }
 
 MainContentComponent::~MainContentComponent()
@@ -87,17 +88,25 @@ void MainContentComponent::paint (Graphics& g)
     g.setFont (Font (16.0f));
     g.setColour (Colours::white);
 
-	auto rect = juce::Rectangle<float>(5, 5);
+	auto rect = juce::Rectangle<float>(4, 4);
 	int xMax = nelx.getValue();
 	int yMax = nely.getValue();
 	if (mTopOp != nullptr)
 	{
 		auto& x = mTopOp->getMatrix();
+		for (int j = 0; j < x.getColumns(); j++){
 		for (int i = 0; i < x.getRows(); i++){
-			for (int j = 0; j < x.getColumns(); j++){
-				rect.setCentre(i * 5 + 350, j * 5 + 50);
+			rect.setCentre(j *4 + 500, i * 4 + 200);
 				auto val = (float)x.get(i, j);
 				g.setColour(juce::Colour(val,val,val,1.0f));
+				g.fillRect(rect);
+			}
+		}
+		for (int j = 0; j < x.getColumns(); j++){
+			for (int i = 0; i < x.getRows(); i++){
+				rect.setCentre(j * -4 + 500, i * 4 + 200);
+				auto val = (float)x.get(i, j);
+				g.setColour(juce::Colour(val, val, val, 1.0f));
 				g.fillRect(rect);
 			}
 		}
@@ -120,11 +129,16 @@ void MainContentComponent::resized()
 void MainContentComponent::hiResTimerCallback()
 {
 	if (mRun){
-		mTopOp->loop(mCompliance, mVolume, mChange);
-		const MessageManagerLock lock(Thread::getCurrentThread());
+		if (mTopOp->loop(mCompliance, mVolume, mChange)){
+			const MessageManagerLock lock(Thread::getCurrentThread());
 
-		if (lock.lockWasGained()) {
-			repaint();
+			if (lock.lockWasGained()) {
+				repaint();
+			}
+		}
+		else{
+			mRunButton->setToggleState(false, dontSendNotification);
+			mRun = false;
 		}
 	}
 	else{

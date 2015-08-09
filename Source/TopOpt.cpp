@@ -324,7 +324,7 @@ void TopOpt::initKE() {
                   6,3,4,1,2,7,0,5,
                   7,2,1,4,3,6,5,0
     };
-    tfloat E = 10;
+    tfloat E = 1;
     tfloat nu = 0.3;
     tfloat k[] = {
         1.f/2.f-nu/6,
