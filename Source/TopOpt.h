@@ -53,7 +53,8 @@ private:
     tfloat rmin;
     Matrix *x;
     Matrix *xNew;
-    tfloat *U; // Displacement vectors
+	tfloat *U; // Displacement vectors
+	tfloat *U2; // Displacement vectors
     Matrix KE; // stiffness matrix
     Matrix *dc;
     Matrix *dcNew;
@@ -62,4 +63,5 @@ private:
     vector<int> fixeddofs;
     vector<int> freedofs;
     tfloat *F;
+	tfloat *F2;
 };

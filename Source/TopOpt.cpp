@@ -31,6 +31,10 @@ xold(nely, nelx)
     dcNew = new Matrix(nely, nelx);
     F = new tfloat[2*(nelx+1)*(nely+1)];
     U = new tfloat[2*(nelx+1)*(nely+1)];
+
+	F2 = new tfloat[2 * (nelx + 1)*(nely + 1)];
+	U2 = new tfloat[2 * (nelx + 1)*(nely + 1)];
+
     initKE();
     initFreeDofs();
     
@@ -164,6 +168,9 @@ void TopOpt::FEAnalysis(){
     memset(F, 0, sizeof(tfloat)*K.getRows());
     memset(U, 0, sizeof(tfloat)*K.getRows());
     
+	memset(F2, 0, sizeof(tfloat)*K.getRows());
+	memset(U2, 0, sizeof(tfloat)*K.getRows());
+
     // Assamble matrix K based on x
     for (int ely = 1; ely <= nely; ely++) {
         for (int elx = 1; elx <= nelx; elx++) {
@@ -193,9 +200,12 @@ void TopOpt::FEAnalysis(){
     
     // solve KU=F <=> U = F/K
     bool solved = K.solve(F, U, fixeddofs);
+	bool solved2 = K.solve(F2, U2, fixeddofs);
     assert(solved);
+	assert(solved2);
     for (int i=0;i<fixeddofs.size();i++){
-        U[fixeddofs[i]] = 0;
+		U[fixeddofs[i]] = 0;
+        U2[fixeddofs[i]] = 0;
     }
 }
 
@@ -225,6 +235,7 @@ tfloat TopOpt::interpolateDiff(int elx, int ely) {
 
 tfloat TopOpt::objectiveFunctionAndSensitivityAnalyses(){
     tfloat Ue[8]; // Displacement for an element
+	tfloat Ue2[8]; // Displacement for an element
     tfloat compliance = 0.0;
     // Objective function and sensitivity analyses
     for (int ely = 1;ely <= nely;ely ++){
@@ -239,9 +250,25 @@ tfloat TopOpt::objectiveFunctionAndSensitivityAnalyses(){
             Ue[5] = U[2*n2+2-1];
             Ue[6] = U[2*n1+1-1];
             Ue[7] = U[2*n1+2-1];
+
+			Ue2[0] = U2[2 * n1 - 1 - 1];
+			Ue2[1] = U2[2 * n1 - 1];
+			Ue2[2] = U2[2 * n2 - 1 - 1];
+			Ue2[3] = U2[2 * n2 - 1];
+			Ue2[4] = U2[2 * n2 + 1 - 1];
+			Ue2[5] = U2[2 * n2 + 2 - 1];
+			Ue2[6] = U2[2 * n1 + 1 - 1];
+			Ue2[7] = U2[2 * n1 + 2 - 1];
+
             tfloat transposeUeKEUe = KE.vTransposeMultMMultV(Ue);
+			tfloat transposeUeKEUe2 = KE.vTransposeMultMMultV(Ue2);
+
             compliance += interpolate(elx,ely)*transposeUeKEUe;
-            dc->set(ely-1, elx-1, -interpolateDiff(elx, ely)*transposeUeKEUe);
+			//compliance += interpolate(elx, ely)*transposeUeKEUe2;
+			auto dcv1 = -interpolateDiff(elx, ely)*transposeUeKEUe;
+			dc->set(ely - 1, elx - 1, dcv1);
+
+			//dc->set(ely - 1, elx - 1, dcv1 - interpolateDiff(elx, ely)*transposeUeKEUe2);
         }
     }
     return compliance;
@@ -269,22 +296,31 @@ void TopOpt::meshIndependencyFilter(){
 }
 
 void TopOpt::defineLoads(){
-    F[1] = -1; // add load in upper left corner
+  //  F[1] = -1; // add load in upper left corner
+	F[2 * (nely + 1)*(nelx + 1) - 1] = -1;
+	F2[2 * (nelx)*(nely + 1) + 2] = 1; // add load in lower left
 }
 
 void TopOpt::initFreeDofs(){
-    // define supports (half MBB-beam)
-    for (int i=0;i<2*(nely+1);i+=2){ // add supports in left 
-        fixeddofs.push_back(i);
-    }
-    fixeddofs.push_back(2*(nely+1)*(nelx+1)-1);
-    vector<int> alldofs;
-    
-    for (int i=0;i<2*(nely+1)*(nelx+1);i++){
-        alldofs.push_back(i);
-    }
-    
-    freedofs = setDiff(alldofs, fixeddofs);
+	 freedofs.clear();
+	 fixeddofs.clear();
+	// define supports (cantilever)
+	for (int i = 0; i < 2 * (nely + 1); i++){ // add supports in left 
+		fixeddofs.push_back(i);
+	}
+	//fixeddofs.push_back(2 * (nely + 1)*(nelx + 1) - 1);
+	vector<int> alldofs;
+	for (int i = 0; i < 2 * (nely + 1)*(nelx + 1); i++){
+		alldofs.push_back(i);
+	}
+	for (auto dof : alldofs){
+		auto iter = std::find_if(begin(fixeddofs), end(fixeddofs), [&dof](int fDof){
+			return dof == fDof;
+		});
+		if (iter == end(fixeddofs)){
+			freedofs.push_back(dof);
+		}
+	}
 }
 
 void TopOpt::optimalityCriteriaBasedOptimization() {
