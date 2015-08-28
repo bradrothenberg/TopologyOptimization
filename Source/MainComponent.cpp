@@ -137,7 +137,6 @@ void MainContentComponent::hiResTimerCallback()
 			}
 		}
 		else{
-			mRunButton->setToggleState(false, dontSendNotification);
 			mRun = false;
 		}
 	}
