@@ -296,8 +296,10 @@ void TopOpt::meshIndependencyFilter(){
 }
 
 void TopOpt::defineLoads(){
-  //  F[1] = -1; // add load in upper left corner
+    //F[1] = -1; // add load in upper left corner
 	F[2 * (nely + 1)*(nelx + 1) - 1] = -1;
+	//F[2 * (nely + 1)*(nelx + 1) - (nely + 1)*(nelx + 1)] = -1;
+
 	F2[2 * (nelx)*(nely + 1) + 2] = 1; // add load in lower left
 }
 
@@ -305,12 +307,16 @@ void TopOpt::initFreeDofs(){
 	 freedofs.clear();
 	 fixeddofs.clear();
 	// define supports (cantilever)
-	for (int i = 0; i < 2 * (nely + 1); i++){ // add supports in left 
+	for (int i = 0; i < 2 * (nely + 1); i ++){ // add supports in left 
 		fixeddofs.push_back(i);
 	}
 	//fixeddofs.push_back(2 * (nely + 1)*(nelx + 1) - 1);
 	vector<int> alldofs;
+	bool yes = false;
 	for (int i = 0; i < 2 * (nely + 1)*(nelx + 1); i++){
+		if (i%(2 * nely) == 0){
+				fixeddofs.push_back(i);
+		}
 		alldofs.push_back(i);
 	}
 	for (auto dof : alldofs){

@@ -20,7 +20,7 @@ volfrac{.5},
 rmin{3.0},
 penal{3.0}
 {
-    setSize (1000, 500);
+    setSize (1000, 600);
 	mLookAndFeel = std::make_shared<NTLookAndFeel>();
 	setLookAndFeel(mLookAndFeel.get());
 	addAndMakeVisible(mRunButton = new TextButton("Run Top Op"));
@@ -93,23 +93,31 @@ void MainContentComponent::paint (Graphics& g)
 	int yMax = nely.getValue();
 	if (mTopOp != nullptr)
 	{
+		auto xStep =500;
+		auto yStep = 400;
 		auto& x = mTopOp->getMatrix();
 		for (int j = 0; j < x.getColumns(); j++){
-		for (int i = 0; i < x.getRows(); i++){
-			rect.setCentre(j *4 + 500, i * 4 + 200);
-				auto val = (float)x.get(i, j);
-				g.setColour(juce::Colour(val,val,val,1.0f));
-				g.fillRect(rect);
-			}
-		}
-		for (int j = 0; j < x.getColumns(); j++){
 			for (int i = 0; i < x.getRows(); i++){
-				rect.setCentre(j * -4 + 500, i * 4 + 200);
+				rect.setCentre(j * 4 + xStep, i * 4 + yStep);
 				auto val = (float)x.get(i, j);
 				g.setColour(juce::Colour(val, val, val, 1.0f));
 				g.fillRect(rect);
+		
+				rect.setCentre(j * -4 + xStep, i * 4 + yStep);
+				g.fillRect(rect);
+				
+				rect.setCentre(j * 4 + xStep, -i * 4 + yStep);
+				g.fillRect(rect);
+				
+				rect.setCentre(j * -4 + xStep, -i * 4 + yStep);
+				g.fillRect(rect);
 			}
 		}
+// 		for (int j = 0; j < x.getColumns(); j++){
+// 			for (int i = 0; i < x.getRows(); i++){
+// 
+// 			}
+// 		}
 		g.setFont(12.0);
 		g.setColour(juce::Colours::white);
 		g.drawText("Compliance: " + juce::String(mCompliance, 3), 300, 10, 150, 24, Justification::left);
