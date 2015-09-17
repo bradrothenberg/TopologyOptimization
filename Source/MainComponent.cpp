@@ -14,8 +14,8 @@ MainContentComponent::MainContentComponent():
 mRun{false},
 mTopOp{nullptr},
 maxChange{.01},
-nelx{120},
-nely{40},
+nelx{10},
+nely{10},
 volfrac{.5},
 rmin{3.0},
 penal{3.0}

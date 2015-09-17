@@ -18,15 +18,19 @@ tfloat passiveRadius = 0;
 TopOpt::TopOpt(int nelx, int nely, tfloat volfrac, tfloat penal, tfloat rmin, tfloat maxChange)
 :nelx(nelx), nely(nely), 
 volfrac(volfrac), penal(penal), rmin(rmin),
-KE(8,8),K(2*(nelx+1)*(nely+1),2*(nely+2)+2),
 mIter(0),
 mMaxChange(maxChange),
 mChange(1.0),
 xold(nely, nelx)
 {
+	KE = Eigen::MatrixXd(8, 8);
+	K = Eigen::MatrixXd(2 * (nelx + 1)*(nely + 1), 2 * (nelx + 1)*(nely + 1));// 2 * (nely + 2) + 2);
     x =Eigen::MatrixXd( nely, nelx);
+	xNew = Eigen::MatrixXd(nely, nelx);
+
     dc = Eigen::MatrixXd(nely, nelx);
-	K = Eigen::MatrixXd(2*nely, 2*nelx);
+	dcNew = Eigen::MatrixXd(nely, nelx);
+
     F = Eigen::VectorXd(2*(nelx+1)*(nely+1));
     U = Eigen::VectorXd(2*(nelx+1)*(nely+1));
     initKE();
@@ -160,7 +164,7 @@ void TopOpt::calculatePassive(){
 
 void TopOpt::FEAnalysis(){
     int edof[8]; // elements degrees of freedom
-    K.fill(0);
+    K.fill(0.0);
 	F.fill(0.0);
 	U.fill(0.0);
 //     memset(F, 0, sizeof(tfloat)*K.getRows());
@@ -194,7 +198,7 @@ void TopOpt::FEAnalysis(){
     defineLoads();
     
     // solve KU=F <=> U = F/K
-	U = K.colPivHouseholderQr().solve(F);
+	U = K.fullPivLu().solve(F);
     //bool solved = K.solve(F, U, fixeddofs);
     //assert(solved);
     for (int i=0;i<fixeddofs.size();i++){
