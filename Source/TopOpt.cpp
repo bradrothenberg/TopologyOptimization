@@ -24,17 +24,15 @@ mMaxChange(maxChange),
 mChange(1.0),
 xold(nely, nelx)
 {
-    x = new Matrix(nely, nelx);
-    xNew = new Matrix(nely, nelx);
-
-    dc = new Matrix(nely, nelx);
-    dcNew = new Matrix(nely, nelx);
-    F = new tfloat[2*(nelx+1)*(nely+1)];
-    U = new tfloat[2*(nelx+1)*(nely+1)];
+    x =Eigen::MatrixXd( nely, nelx);
+    dc = Eigen::MatrixXd(nely, nelx);
+	K = Eigen::MatrixXd(2*nely, 2*nelx);
+    F = Eigen::VectorXd(2*(nelx+1)*(nely+1));
+    U = Eigen::VectorXd(2*(nelx+1)*(nely+1));
     initKE();
     initFreeDofs();
     
-    x->fill(volfrac);
+	x.fill(volfrac);
     calculatePassive();
 	float x, y, z;
 	loop(x,y,z);
@@ -66,12 +64,12 @@ xold(nely, nelx)
 
 TopOpt::~TopOpt()
 {
-	delete x;
-	delete xNew;
-	delete U;
-	delete dc;
-	delete dcNew;
-	delete F;
+// 	delete x;
+// 	delete xNew;
+// 	delete U;
+// 	delete dc;
+// 	delete dcNew;
+// 	delete F;
 }
 
 bool TopOpt::loop(float& compliance, float& volume, float& change)
@@ -85,7 +83,7 @@ bool TopOpt::loop(float& compliance, float& volume, float& change)
 	}
 		
 		mIter++;
-		xold.set(*x);
+		xold = x;
 
 		FEAnalysis();
 
@@ -98,8 +96,8 @@ bool TopOpt::loop(float& compliance, float& volume, float& change)
 		optimalityCriteriaBasedOptimization();
 
 		// print results
-		mChange = x->maxDiff(xold);
-		mCurVolume = x->sum() / (nelx*nely);
+		mChange = (x - xold).maxCoeff();
+		mCurVolume = x.sum() / (nelx*nely);
 		
 		compliance = mCurCompliance;
 		volume = mCurVolume;
@@ -149,9 +147,11 @@ void TopOpt::calculatePassive(){
         for (int elx = 1;elx<=nelx;elx++){
             bool isInsidePassiveDisk = sqrt((ely-centerY)*(ely-centerY)+(elx-centerX)*(elx-centerX)) < radius;
             if (isInsidePassiveDisk){
-                int index = x->getIndex(ely-1, elx-1);
-                passiveNoMaterial.push_back(index);
-                x->set(ely-1, elx-1, 0.001);
+				
+               // auto mIdx =x. = x->getIndex(ely-1, elx-1);
+               // passiveNoMaterial.push_back(index);
+				
+                x(ely-1, elx-1) =  0.001;
             }
         }
     }
@@ -161,10 +161,12 @@ void TopOpt::calculatePassive(){
 void TopOpt::FEAnalysis(){
     int edof[8]; // elements degrees of freedom
     K.fill(0);
-    memset(F, 0, sizeof(tfloat)*K.getRows());
-    memset(U, 0, sizeof(tfloat)*K.getRows());
+	F.fill(0.0);
+	U.fill(0.0);
+//     memset(F, 0, sizeof(tfloat)*K.getRows());
+//     memset(U, 0, sizeof(tfloat)*K.getRows());
     
-    // Assamble matrix K based on x
+    // Assemble matrix K based on x
     for (int ely = 1; ely <= nely; ely++) {
         for (int elx = 1; elx <= nelx; elx++) {
             int n1 = (nely + 1) * (elx - 1) + ely;
@@ -182,8 +184,8 @@ void TopOpt::FEAnalysis(){
                 for (int y = 0;y < 8; y++) {
                     int ny = edof[y];
                     int nx = edof[x];
-                    if (!K.isBanded() || ny <= nx) // only set lower left matrix if banded
-                        K.add(ny, nx, xPenal*KE.get(y, x));
+                    if ( ny <= nx) // only set lower left matrix if banded
+                        K(ny, nx) = xPenal*KE(y, x);
                 }
             }
         }
@@ -192,10 +194,11 @@ void TopOpt::FEAnalysis(){
     defineLoads();
     
     // solve KU=F <=> U = F/K
-    bool solved = K.solve(F, U, fixeddofs);
-    assert(solved);
+	U = K.colPivHouseholderQr().solve(F);
+    //bool solved = K.solve(F, U, fixeddofs);
+    //assert(solved);
     for (int i=0;i<fixeddofs.size();i++){
-        U[fixeddofs[i]] = 0;
+        U(fixeddofs[i]) = 0;
     }
 }
 
@@ -204,7 +207,7 @@ tfloat TopOpt::interpolate(int elx, int ely) {
     tfloat xVal = x->get(ely-1, elx-1);
     tfloat xPenal = xVal/(1+penal*(1-xVal));
 #else // SIMP
-    tfloat xPenal = pow(x->get(ely-1, elx-1), penal);
+    tfloat xPenal = pow(x(ely-1, elx-1), penal);
 #endif
     return xPenal;
 }
@@ -219,37 +222,47 @@ tfloat TopOpt::interpolateDiff(int elx, int ely) {
     return (1+penal)/(tmp*tmp);
     
 #else // SIMP
-    return penal*pow(x->get(ely-1,elx-1),(penal-1));
+    return penal*pow(x(ely-1,elx-1),(penal-1));
 #endif
 }
 
 tfloat TopOpt::objectiveFunctionAndSensitivityAnalyses(){
     tfloat Ue[8]; // Displacement for an element
     tfloat compliance = 0.0;
-    // Objective function and sensitivity analyses
+    // Objective function and sensitivity analysis
     for (int ely = 1;ely <= nely;ely ++){
         for (int elx = 1;elx <= nelx;elx ++){
             int n1 = (nely+1)*(elx-1)+ely;
             int n2 = (nely+1)*elx+ely;
-            Ue[0] = U[2*n1-1-1];
-            Ue[1] = U[2*n1  -1];
-            Ue[2] = U[2*n2-1-1];
-            Ue[3] = U[2*n2  -1];
-            Ue[4] = U[2*n2+1-1];
-            Ue[5] = U[2*n2+2-1];
-            Ue[6] = U[2*n1+1-1];
-            Ue[7] = U[2*n1+2-1];
-            tfloat transposeUeKEUe = KE.vTransposeMultMMultV(Ue);
+            Ue[0] = U(2*n1-1-1);
+            Ue[1] = U(2*n1  -1);
+            Ue[2] = U(2*n2-1-1);
+            Ue[3] = U(2*n2  -1);
+            Ue[4] = U(2*n2+1-1);
+            Ue[5] = U(2*n2+2-1);
+            Ue[6] = U(2*n1+1-1);
+            Ue[7] = U(2*n1+2-1);
+            tfloat transposeUeKEUe = vTransposeMultMMultV(KE, Ue);
             compliance += interpolate(elx,ely)*transposeUeKEUe;
-            dc->set(ely-1, elx-1, -interpolateDiff(elx, ely)*transposeUeKEUe);
+            dc(ely-1, elx-1)= -interpolateDiff(elx, ely)*transposeUeKEUe;
         }
     }
     return compliance;
 }
 
+tfloat TopOpt::vTransposeMultMMultV(Eigen::MatrixXd m, tfloat *v) {
+	tfloat sum = 0;
+	for (int i = 0;i < m.rows();i++) {
+		tfloat vi = v[i];
+		for (int j = 0;j < m.cols();j++) {
+			sum += vi*m(i, j)*v[j];
+		}
+	}
+	return sum;
+}
 
 void TopOpt::meshIndependencyFilter(){
-    dcNew->fill(0.0);
+    dcNew.fill(0.0);
     int roundedRMin = (int)(rmin);
     for (int i=1;i<=nelx;i++){
         for (int j = 1;j<=nely;j++){
@@ -258,18 +271,18 @@ void TopOpt::meshIndependencyFilter(){
                 for (int l = max(j-roundedRMin,1);l<=min(j+roundedRMin,nely);l++){
                     tfloat fac = rmin-sqrt((i-k)*(i-k)+(j-l)*(j-l));
                     sum = sum + max(0.0,fac);
-                    tfloat newDcValue = dcNew->get(j-1,i-1) + max(0.0,fac)*x->get(l-1,k-1)*dc->get(l-1,k-1);
-                    dcNew->set(j-1,i-1, newDcValue);
+                    tfloat newDcValue = dcNew(j-1,i-1) + max(0.0,fac)*x(l-1,k-1)*dc(l-1,k-1);
+                    dcNew(j-1,i-1)= newDcValue;
                 }
             }
-            dcNew->set(j-1,i-1, dcNew->get(j-1,i-1) / (x->get(j-1,i-1)*sum));
+            dcNew(j-1,i-1)= dcNew(j-1,i-1) / (x(j-1,i-1)*sum);
         }
     }
     swap(dc,dcNew); // dcNew is now 'assigned' to dc
 }
 
 void TopOpt::defineLoads(){
-    F[1] = -1; // add load in upper left corner
+    F(1) = -1; // add load in upper left corner
 }
 
 void TopOpt::initFreeDofs(){
@@ -294,16 +307,16 @@ void TopOpt::optimalityCriteriaBasedOptimization() {
     while (l2-l1 > 1e-4) {
         tfloat lmid = 0.5*(l1+l2);
         tfloat invLmid = 1.0/lmid;
-        for (int i=0; i < x->getDataCount(); i++) {
-            tfloat xVal = (*x)[i];
-            (*xNew)[i] = max(0.001,max(xVal-move,min(1.,min(xVal+move, xVal*sqrt(-(*dc)[i]*invLmid)))));
+        for (int i=0; i < x.rows() * x.cols(); i++) {
+            tfloat xVal = x(i);
+            xNew(i) = max(0.001,max(xVal-move,min(1.,min(xVal+move, xVal*sqrt(-dc(i)*invLmid)))));
         }
         vector<int>::iterator iter = passiveNoMaterial.begin();
-        for (;iter != passiveNoMaterial.end();iter++) {
-            int index = *iter;
-            (*xNew)[index] = 0.001;
-        }
-        if (xNew->sum() - volfrac*nelx*nely > 0) {
+//         for (;iter != passiveNoMaterial.end();iter++) {
+//             int index = *iter;
+//             (*xNew)[index] = 0.001;
+//         }
+        if (xNew.sum() - volfrac*nelx*nely > 0) {
             l1 = lmid;
         } else {
             l2 = lmid;
@@ -340,7 +353,7 @@ void TopOpt::initKE() {
         for (int x=0; x < 8; x++) {
             int kIndex = kIndexArray[x*8+y];
             tfloat value = E/(1-(nu*nu))*k[kIndex];
-            KE.set(y,x,value);
+            KE(y,x) = value;
         }
     }
 }

@@ -1,0 +1,19 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2015
+Project("{742181BD-BF08-A30F-B702-D4AB44ED17AB}") = "TopOp", "TopOp.vcxproj", "{C236093E-1CD6-099C-55DD-BED07C0A098A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C236093E-1CD6-099C-55DD-BED07C0A098A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C236093E-1CD6-099C-55DD-BED07C0A098A}.Debug|Win32.Build.0 = Debug|Win32
+		{C236093E-1CD6-099C-55DD-BED07C0A098A}.Release|Win32.ActiveCfg = Release|Win32
+		{C236093E-1CD6-099C-55DD-BED07C0A098A}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

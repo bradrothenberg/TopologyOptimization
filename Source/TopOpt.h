@@ -4,6 +4,7 @@
 #include <set>
 #include "Matrix.h"
 #include "MatrixBand.h"
+#include <Eigen/Dense>
 
 #ifndef tfloat
 #define tfloat double
@@ -21,13 +22,14 @@ public:
 	~TopOpt();
 
 	bool loop(float& compliance, float& volume, float& change);
-	const Matrix& getMatrix()const{ return *x; }
+	const Eigen::MatrixXd& getMatrix()const{ return x; }
+	tfloat vTransposeMultMMultV(Eigen::MatrixXd m, tfloat *v);
 
 private:
 	int mIter;
 	tfloat mMaxChange;
 	tfloat mChange;
-	Matrix xold;
+	Eigen::MatrixXd  xold;
 	tfloat mCurCompliance;
 	tfloat mCurVolume;
 private:
@@ -51,15 +53,19 @@ private:
     tfloat volfrac; // volume fraction
     tfloat penal;
     tfloat rmin;
-    Matrix *x;
-    Matrix *xNew;
-    tfloat *U; // Displacement vectors
-    Matrix KE; // stiffness matrix
-    Matrix *dc;
-    Matrix *dcNew;
-    MatrixBand K;
+	Eigen::MatrixXd x;
+	Eigen::MatrixXd xNew;
+
+	Eigen::VectorXd U;
+
+	Eigen::MatrixXd KE; // stiffness matrix
+	Eigen::MatrixXd dc;
+	Eigen::MatrixXd dcNew;
+	Eigen::MatrixXd K;
+    //MatrixBand K;
     vector<int> passiveNoMaterial;
     vector<int> fixeddofs;
     vector<int> freedofs;
-    tfloat *F;
+	Eigen::VectorXd F;
+	//tfloat *F;
 };

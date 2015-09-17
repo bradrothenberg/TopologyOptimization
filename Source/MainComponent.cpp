@@ -94,18 +94,18 @@ void MainContentComponent::paint (Graphics& g)
 	if (mTopOp != nullptr)
 	{
 		auto& x = mTopOp->getMatrix();
-		for (int j = 0; j < x.getColumns(); j++){
-		for (int i = 0; i < x.getRows(); i++){
+		for (int j = 0; j < x.cols(); j++){
+		for (int i = 0; i < x.rows(); i++){
 			rect.setCentre(j *4 + 500, i * 4 + 200);
-				auto val = (float)x.get(i, j);
+				auto val = (float)x(i, j);
 				g.setColour(juce::Colour(val,val,val,1.0f));
 				g.fillRect(rect);
 			}
 		}
-		for (int j = 0; j < x.getColumns(); j++){
-			for (int i = 0; i < x.getRows(); i++){
+		for (int j = 0; j < x.cols(); j++){
+			for (int i = 0; i < x.rows(); i++){
 				rect.setCentre(j * -4 + 500, i * 4 + 200);
-				auto val = (float)x.get(i, j);
+				auto val = (float)x(i, j);
 				g.setColour(juce::Colour(val, val, val, 1.0f));
 				g.fillRect(rect);
 			}

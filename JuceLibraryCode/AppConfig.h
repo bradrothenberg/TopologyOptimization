@@ -29,6 +29,7 @@
 #define JUCE_MODULE_AVAILABLE_juce_core                  1
 #define JUCE_MODULE_AVAILABLE_juce_cryptography          1
 #define JUCE_MODULE_AVAILABLE_juce_data_structures       1
+#define JUCE_MODULE_AVAILABLE_juce_eigen                 1
 #define JUCE_MODULE_AVAILABLE_juce_events                1
 #define JUCE_MODULE_AVAILABLE_juce_graphics              1
 #define JUCE_MODULE_AVAILABLE_juce_gui_basics            1
