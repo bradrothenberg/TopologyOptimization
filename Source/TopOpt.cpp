@@ -188,7 +188,7 @@ void TopOpt::FEAnalysis(){
                 for (int y = 0;y < 8; y++) {
                     int ny = edof[y];
                     int nx = edof[x];
-                    if ( ny <= nx) // only set lower left matrix if banded
+                   // if ( ny <= nx) // only set lower left matrix if banded
                         K(ny, nx) = xPenal*KE(y, x);
                 }
             }
