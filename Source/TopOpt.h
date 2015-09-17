@@ -5,7 +5,7 @@
 #include "Matrix.h"
 #include "MatrixBand.h"
 #include <Eigen/Dense>
-
+#include <Eigen/Sparse>
 #ifndef tfloat
 #define tfloat double
 #endif
@@ -61,7 +61,8 @@ private:
 	Eigen::MatrixXd KE; // stiffness matrix
 	Eigen::MatrixXd dc;
 	Eigen::MatrixXd dcNew;
-	Eigen::MatrixXd K;
+	Eigen::SparseMatrix<double> K;
+	//Eigen::MatrixXd K;
     //MatrixBand K;
     vector<int> passiveNoMaterial;
     vector<int> fixeddofs;

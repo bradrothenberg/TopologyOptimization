@@ -24,7 +24,8 @@ mChange(1.0),
 xold(nely, nelx)
 {
 	KE = Eigen::MatrixXd(8, 8);
-	K = Eigen::MatrixXd(2 * (nelx + 1)*(nely + 1), 2 * (nelx + 1)*(nely + 1));// 2 * (nely + 2) + 2);
+	K = Eigen::SparseMatrix<double>(2 * (nelx + 1)*(nely + 1), 2 * (nelx + 1)*(nely + 1));
+	//K = Eigen::MatrixXd(2 * (nelx + 1)*(nely + 1), 2 * (nelx + 1)*(nely + 1));// 2 * (nely + 2) + 2);
     x =Eigen::MatrixXd( nely, nelx);
 	xNew = Eigen::MatrixXd(nely, nelx);
 
@@ -164,12 +165,17 @@ void TopOpt::calculatePassive(){
 
 void TopOpt::FEAnalysis(){
     int edof[8]; // elements degrees of freedom
-    K.fill(0.0);
+	
+    //K.fill(0.0);
 	F.fill(0.0);
 	U.fill(0.0);
 //     memset(F, 0, sizeof(tfloat)*K.getRows());
 //     memset(U, 0, sizeof(tfloat)*K.getRows());
-    
+	typedef Eigen::Triplet<double> T;
+	std::vector<T> tripletList;
+
+		
+	
     // Assemble matrix K based on x
     for (int ely = 1; ely <= nely; ely++) {
         for (int elx = 1; elx <= nelx; elx++) {
@@ -189,16 +195,22 @@ void TopOpt::FEAnalysis(){
                     int ny = edof[y];
                     int nx = edof[x];
                    // if ( ny <= nx) // only set lower left matrix if banded
-                        K(ny, nx) = xPenal*KE(y, x);
+					auto val = xPenal * KE(x, y);
+					if (val != 0.f) {
+						tripletList.push_back(T(nx, ny,val));
+					}                       
                 }
             }
         }
     }
+	K.setFromTriplets(tripletList.begin(), tripletList.end());
+
     // add loads to vector F
     defineLoads();
     
     // solve KU=F <=> U = F/K
-	U = K.fullPivLu().solve(F);
+	Eigen::SimplicialCholesky<Eigen::SparseMatrix<double> > chol(K);  // performs a Cholesky factorization of A
+	U = chol.solve(F);         // use the factorization to solve for the given right hand side
     //bool solved = K.solve(F, U, fixeddofs);
     //assert(solved);
     for (int i=0;i<fixeddofs.size();i++){
