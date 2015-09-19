@@ -196,9 +196,9 @@ void TopOpt::FEAnalysis(){
                     int nx = edof[x];
                    // if ( ny <= nx) // only set lower left matrix if banded
 					auto val = xPenal * KE(x, y);
-					if (val != 0.f) {
+					//if (val != 0.f) {
 						tripletList.push_back(T(nx, ny,val));
-					}                       
+					//}                       
                 }
             }
         }
