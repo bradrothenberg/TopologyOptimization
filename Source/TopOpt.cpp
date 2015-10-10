@@ -36,8 +36,8 @@ xold(nely, nelx)
     
     x->fill(volfrac);
     calculatePassive();
-	float x, y, z;
-	loop(x,y,z);
+// 	float x, y, z;
+// 	loop(x,y,z);
 
     // start iteration
 //     while (change > maxChange){
